@@ -11,6 +11,6 @@ Para compilar, você deve adicionar sua API key em:
 
 ## Imagens
 
-![screen](../screens/movies.png)
+![screen](../master/screens/movies.png)
 
-![screen](../screens/movie-detail.png)
+![screen](../master/screens/movie-detail.png)
