@@ -8,10 +8,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.squareup.picasso.Picasso;
 import com.edison.udacity.android.moviedb.model.Movie;
 import com.edison.udacity.android.moviedb.model.Movies;
 import com.edison.udacity.android.moviedb.model.Poster;
+import com.squareup.picasso.Picasso;
 
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieHolder> {
 

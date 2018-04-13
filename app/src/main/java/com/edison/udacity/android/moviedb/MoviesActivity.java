@@ -28,17 +28,21 @@ import com.edison.udacity.android.moviedb.tmdb.TMDBPoster;
 
 import java.io.IOException;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 import static android.net.ConnectivityManager.EXTRA_NO_CONNECTIVITY;
 
 public class MoviesActivity extends AppCompatActivity implements MovieAdapter.OnItemClickListener{
 
     private static final String TAG = MoviesActivity.class.getSimpleName();
+    private static final int IMG_SIZE = 185;
 
     private class MoviesAsyncTask extends AsyncTask<TMDB, Void, Movies> {
 
         private @StringRes int mTitle;
 
-        public MoviesAsyncTask(@StringRes int titlee) {
+        private MoviesAsyncTask(@StringRes int titlee) {
             mTitle = titlee;
         }
 
@@ -77,10 +81,10 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
         }
     };
 
-    private RecyclerView mMovies;
-    private TextView mConnectionFailureMessage;
-    private TextView mErrorMessage;
-    private ProgressBar mLoadingIndicator;
+    @BindView(R.id.rv_movies)  RecyclerView mMovies;
+    @BindView(R.id.tv_connection_failure_message)  TextView mConnectionFailureMessage;
+    @BindView(R.id.tv_error_message)  TextView mErrorMessage;
+    @BindView(R.id.pb_loading_indicator)  ProgressBar mLoadingIndicator;
 
     private boolean mConnected = false;
 
@@ -88,11 +92,7 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movies);
-
-        mConnectionFailureMessage = findViewById(R.id.tv_connection_failure_message);
-        mErrorMessage = findViewById(R.id.tv_error_message);
-        mLoadingIndicator = findViewById(R.id.pb_loading_indicator);
-        mMovies = findViewById(R.id.rv_movies);
+        ButterKnife.bind(this);
 
         GridLayoutManager layoutManager = new GridLayoutManager(this, getSpanCount());
         mMovies.setLayoutManager(layoutManager);
@@ -194,7 +194,7 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
 
         float density  = getResources().getDisplayMetrics().density;
         float dpWidth  = outMetrics.widthPixels / density;
-        return Math.round(dpWidth/185);
+        return Math.round(dpWidth/IMG_SIZE);
     }
 
     

@@ -8,10 +8,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.edison.udacity.android.moviedb.api.media.BundleMedia;
 import com.edison.udacity.android.moviedb.model.Movie;
-import com.edison.udacity.android.moviedb.model.MovieReader;
-import com.edison.udacity.android.moviedb.model.MovieWriter;
+import com.edison.udacity.android.moviedb.model.MovieMedia;
 import com.edison.udacity.android.moviedb.model.Poster;
 import com.edison.udacity.android.moviedb.tmdb.TMDBPoster;
 import com.squareup.picasso.Picasso;
@@ -19,39 +17,38 @@ import com.squareup.picasso.Picasso;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MovieActivity extends AppCompatActivity {
+
+    private static final String MOVIE = "movie";
 
     public static void start(@NonNull Context context, @NonNull Movie movie) {
         Intent intent = new Intent(context, MovieActivity.class);
-        MovieWriter writer = new MovieWriter(movie);
-        BundleMedia media = new BundleMedia(writer);
-        intent.putExtras(media.media());
+        intent.putExtra(MOVIE, new MovieMedia(movie));
         context.startActivity(intent);
     }
 
-    private ImageView mIvPoster;
-    private TextView mTvOriginalTitle;
-    private TextView mTvReleaseDate;
-    private TextView mTvVoteAverage;
-    private TextView mTvOverview;
+    @BindView(R.id.iv_poster) ImageView mIvPoster;
+    @BindView(R.id.tv_original_title)  TextView mTvOriginalTitle;
+    @BindView(R.id.tv_release_date)  TextView mTvReleaseDate;
+    @BindView(R.id.tv_vote_average)  TextView mTvVoteAverage;
+    @BindView(R.id.tv_overview)  TextView mTvOverview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie);
         setTitle(R.string.detail);
-
-        mIvPoster = findViewById(R.id.iv_poster);
-        mTvOriginalTitle = findViewById(R.id.tv_original_title);
-        mTvReleaseDate = findViewById(R.id.tv_release_date);
-        mTvVoteAverage = findViewById(R.id.tv_vote_average);
-        mTvOverview = findViewById(R.id.tv_overview);
+        ButterKnife.bind(this);
 
         Bundle extras = getIntent().getExtras();
         if (extras == null) {
             finish();
         } else {
-            Movie movie = new MovieReader(new BundleMedia(extras));
+            Movie movie = extras.getParcelable(MOVIE);
+            assert movie != null;
             setMovie(movie);
         }
     }

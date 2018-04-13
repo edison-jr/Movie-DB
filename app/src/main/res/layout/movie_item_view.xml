@@ -10,9 +10,10 @@
     <ImageView
         android:id="@+id/iv_poster"
         android:layout_width="match_parent"
-        android:layout_height="256dp"
+        android:layout_height="@dimen/movie_poster_height"
         android:adjustViewBounds="true"
-        android:scaleType="fitXY"/>
+        android:scaleType="fitXY"
+        android:contentDescription="@string/description_poster" />
 
     <TextView
         android:id="@+id/tv_original_title"
