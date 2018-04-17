@@ -1,9 +1,12 @@
 package com.edison.android.apps.moviedb.tmdb.api;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringDef;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.util.Log;
 
 import com.edison.android.apps.moviedb.BuildConfig;
@@ -36,8 +39,8 @@ public class TMDB {
 
     private static final String PARAM_API_KEY = "api_key";
 
-    public static final String POPULAR_URL = "popular";
-    public static final String TOP_RATED_URL = "top_rated";
+    private static final String POPULAR_URL = "popular";
+    private static final String TOP_RATED_URL = "top_rated";
 
     @StringDef({POPULAR_URL, TOP_RATED_URL})
     @Retention(RetentionPolicy.SOURCE)
@@ -65,6 +68,10 @@ public class TMDB {
     public TMDB path(@UrlPath String url) {
         mUrl.addPathSegment(url);
         return this;
+    }
+
+    public Loader<Movies> movies(@NonNull Context context) {
+        return new MoviesLoader(context, this);
     }
 
     public void movies(OnResult<Movies> onResult) {
@@ -190,6 +197,42 @@ public class TMDB {
         void onFailure(TMDB tmdb, IOException e);
 
         void onResult(TMDB tmdb, T t);
+    }
+
+    private static class MoviesLoader extends AsyncTaskLoader<Movies> {
+
+        final TMDB mTmdb;
+        Movies mMovies;
+
+        MoviesLoader(Context context, TMDB tmdb) {
+            super(context);
+            mTmdb = tmdb;
+        }
+
+        @Override
+        protected void onStartLoading() {
+            if (mMovies == null) {
+                forceLoad();
+            } else {
+                deliverResult(mMovies);
+            }
+        }
+
+        @Override
+        public Movies loadInBackground() {
+            try {
+                return mTmdb.movies();
+            } catch (IOException e) {
+                Log.e(TAG, "Failure on get movies", e);
+                return null;
+            }
+        }
+
+        @Override
+        public void deliverResult(Movies data) {
+            mMovies = data;
+            super.deliverResult(data);
+        }
     }
 
 }

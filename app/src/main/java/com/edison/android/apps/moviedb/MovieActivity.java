@@ -36,21 +36,30 @@ public class MovieActivity extends AppCompatActivity {
     @BindView(R.id.tv_vote_average)  TextView mTvVoteAverage;
     @BindView(R.id.tv_overview)  TextView mTvOverview;
 
+    private MovieMedia mMovie;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie);
-        setTitle(R.string.detail);
         ButterKnife.bind(this);
 
-        Bundle extras = getIntent().getExtras();
-        if (extras == null) {
-            finish();
+        Bundle extras;
+        if (savedInstanceState != null) {
+            extras = savedInstanceState;
         } else {
-            Movie movie = extras.getParcelable(MOVIE);
-            assert movie != null;
-            setMovie(movie);
+            extras = getIntent().getExtras();
+            assert extras != null;
         }
+        mMovie = extras.getParcelable(MOVIE);
+        assert mMovie != null;
+        setMovie(mMovie);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(MOVIE, mMovie);
     }
 
     private void setMovie(@NonNull Movie movie) {
@@ -62,5 +71,4 @@ public class MovieActivity extends AppCompatActivity {
         mTvVoteAverage.setText(String.valueOf(movie.voteAverage()));
         mTvOverview.setText(movie.overview());
     }
-
 }

@@ -4,6 +4,8 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.support.annotation.StringRes;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -21,21 +23,22 @@ import com.edison.android.apps.moviedb.tmdb.model.Movies;
 import com.edison.android.apps.moviedb.tmdb.model.Poster;
 import com.edison.android.tools.net.NetworkListener;
 
-import java.io.IOException;
-
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-public class MoviesActivity extends AppCompatActivity implements TMDB.OnResult<Movies>, MovieAdapter.OnItemClickListener {
+public class MoviesActivity extends AppCompatActivity implements MovieAdapter.OnItemClickListener,
+        LoaderManager.LoaderCallbacks<Movies> {
 
     private static final int IMG_SIZE = 185;
+
+    private static final String LOADER_ID = "loader_id";
 
     private final NetworkListener mNetworkListener = new NetworkListener() {
 
         @Override
         public void onConnected() {
             mConnectionFailureMessage.setVisibility(View.GONE);
-            popular();
+            request(R.string.popular);
         }
 
         @Override
@@ -45,12 +48,12 @@ public class MoviesActivity extends AppCompatActivity implements TMDB.OnResult<M
 
     };
 
-    private @StringRes int mTitle;
-
     @BindView(R.id.rv_movies)  RecyclerView mMovies;
     @BindView(R.id.tv_connection_failure_message)  TextView mConnectionFailureMessage;
     @BindView(R.id.tv_error_message)  TextView mErrorMessage;
     @BindView(R.id.pb_loading_indicator)  ProgressBar mLoadingIndicator;
+
+    @StringRes int mCurrentLoaderId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +65,18 @@ public class MoviesActivity extends AppCompatActivity implements TMDB.OnResult<M
         mMovies.setLayoutManager(layoutManager);
         mMovies.setHasFixedSize(true);
 
-        popular();
+        Bundle extras;
+        if (savedInstanceState != null) {
+            extras = savedInstanceState;
+        } else {
+            extras = getIntent().getExtras();
+        }
+
+        if (extras != null) {
+            request(extras.getInt(LOADER_ID, R.string.popular));
+        } else {
+            request(R.string.popular);
+        }
     }
 
     @Override
@@ -90,46 +104,57 @@ public class MoviesActivity extends AppCompatActivity implements TMDB.OnResult<M
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.ac_popular:
-                popular();
+                request(R.string.popular);
                 return true;
             case R.id.ac_top_rated:
-                topRated();
+                request(R.string.top_rated);
                 return true;
         }
         return false;
     }
 
-    private void popular() {
-        request(R.string.popular, TMDB.popular());
+    private void request(@StringRes int id) {
+        getSupportLoaderManager().restartLoader(id, null, this);
     }
 
-    private void topRated() {
-        request(R.string.top_rated, TMDB.topRated());
+    @Override
+    public Loader<Movies> onCreateLoader(int id, Bundle args) {
+        switch (id) {
+            case R.string.popular:
+                return TMDB.popular().movies(this);
+            case R.string.top_rated:
+                return TMDB.topRated().movies(this);
+        }
+        throw new IllegalArgumentException("Not supported loader id: " + id);
     }
 
-    private void request(@StringRes int title, TMDB tmdb) {
-        mTitle = title;
-        tmdb.movies(this);
-    }
-
-    private void onResponse() {
-        setTitle(mTitle);
+    @Override
+    public void onLoadFinished(Loader<Movies> loader, Movies data) {
         mLoadingIndicator.setVisibility(View.GONE);
+        if (data == null) {
+            mErrorMessage.setVisibility(View.VISIBLE);
+            mMovies.setVisibility(View.INVISIBLE);
+        } else {
+            mCurrentLoaderId = loader.getId();
+            setTitle(mCurrentLoaderId);
+            mMovies.setVisibility(View.VISIBLE);
+            MovieAdapter adapter = new MovieAdapter(data, new TMDBPoster(Poster.IMG_W_185), this);
+            mMovies.setAdapter(adapter);
+            mConnectionFailureMessage.setVisibility(View.GONE);
+        }
     }
 
     @Override
-    public void onFailure(TMDB tmdb, IOException e) {
-        onResponse();
-        mErrorMessage.setVisibility(View.VISIBLE);
-        mMovies.setVisibility(View.INVISIBLE);
+    public void onLoaderReset(Loader<Movies> loader) {
+        mLoadingIndicator.setVisibility(View.VISIBLE);
     }
 
     @Override
-    public void onResult(TMDB tmdb, Movies movies) {
-        mMovies.setVisibility(View.VISIBLE);
-        MovieAdapter adapter = new MovieAdapter(movies, new TMDBPoster(Poster.IMG_W_185), this);
-        mMovies.setAdapter(adapter);
-        mConnectionFailureMessage.setVisibility(View.GONE);
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (mCurrentLoaderId != 0) {
+            outState.putInt(LOADER_ID, mCurrentLoaderId);
+        }
     }
 
     @Override
@@ -147,5 +172,4 @@ public class MoviesActivity extends AppCompatActivity implements TMDB.OnResult<M
         return Math.round(dpWidth/IMG_SIZE);
     }
 
-    
 }
