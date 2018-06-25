@@ -3,16 +3,14 @@ package com.edison.android.tools.media.extras;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
+import com.edison.android.tools.media.Media;
 import com.edison.android.tools.media.MediaReader;
-import com.edison.android.tools.media.MediaWritable;
 import com.edison.android.tools.media.MediaWriter;
 
 /**
  * Created by jeziel on 11/03/17.
  */
-public class BundleMedia implements MediaReader, MediaWriter<Bundle> {
-
-    private static final String TAG = BundleMedia.class.getSimpleName();
+public class BundleMedia implements MediaReader, Media<Bundle> {
 
     private Bundle mMedia;
 
@@ -24,9 +22,9 @@ public class BundleMedia implements MediaReader, MediaWriter<Bundle> {
         this.mMedia = media;
     }
 
-    public BundleMedia(@NonNull MediaWritable media) {
+    public BundleMedia(@NonNull MediaWriter media, int flags) {
         this();
-        media.write(this);
+        media.into(this, flags);
     }
 
     @Override
@@ -80,7 +78,7 @@ public class BundleMedia implements MediaReader, MediaWriter<Bundle> {
     }
 
     @Override
-    public Bundle media() {
+    public Bundle data() {
         return mMedia;
     }
 

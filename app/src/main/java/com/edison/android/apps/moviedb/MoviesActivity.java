@@ -1,8 +1,10 @@
 package com.edison.android.apps.moviedb;
 
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
@@ -17,10 +19,11 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.edison.android.apps.moviedb.tmdb.api.TMDB;
+import com.edison.android.apps.moviedb.tmdb.api.TMDBApi;
 import com.edison.android.apps.moviedb.tmdb.api.TMDBPoster;
-import com.edison.android.apps.moviedb.tmdb.model.Movies;
-import com.edison.android.apps.moviedb.tmdb.model.Poster;
+import com.edison.android.apps.moviedb.tmdb.db.TMDBDatabase;
+import com.edison.android.apps.moviedb.tmdb.domain.movie.Movie;
+import com.edison.android.apps.moviedb.tmdb.domain.movie.Movies;
 import com.edison.android.tools.net.NetworkListener;
 
 import butterknife.BindView;
@@ -32,6 +35,7 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
     private static final int IMG_SIZE = 185;
 
     private static final String LOADER_ID = "loader_id";
+    private static final int REQUEST_MOVIE = 1;
 
     private final NetworkListener mNetworkListener = new NetworkListener() {
 
@@ -54,6 +58,7 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
     @BindView(R.id.pb_loading_indicator)  ProgressBar mLoadingIndicator;
 
     @StringRes int mCurrentLoaderId;
+    MovieAdapter mMovieAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +90,10 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
 
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(mNetworkListener, filter);
+
+        if (mCurrentLoaderId == R.id.favorite) {
+            request(mCurrentLoaderId);
+        }
     }
 
     @Override
@@ -96,7 +105,7 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
+        getMenuInflater().inflate(R.menu.main_menu, menu);
         return true;
     }
 
@@ -109,6 +118,9 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
             case R.id.ac_top_rated:
                 request(R.string.top_rated);
                 return true;
+            case R.id.ac_favorites:
+                request(R.string.favorites);
+                return true;
         }
         return false;
     }
@@ -117,13 +129,16 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
         getSupportLoaderManager().restartLoader(id, null, this);
     }
 
+    @NonNull
     @Override
     public Loader<Movies> onCreateLoader(int id, Bundle args) {
         switch (id) {
             case R.string.popular:
-                return TMDB.popular().movies(this);
+                return TMDBApi.popular(this);
             case R.string.top_rated:
-                return TMDB.topRated().movies(this);
+                return TMDBApi.topRated(this);
+            case R.string.favorites:
+                return new TMDBDatabase(this).favorites();
         }
         throw new IllegalArgumentException("Not supported loader id: " + id);
     }
@@ -138,8 +153,8 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
             mCurrentLoaderId = loader.getId();
             setTitle(mCurrentLoaderId);
             mMovies.setVisibility(View.VISIBLE);
-            MovieAdapter adapter = new MovieAdapter(data, new TMDBPoster(Poster.IMG_W_185), this);
-            mMovies.setAdapter(adapter);
+            mMovieAdapter = new MovieAdapter(data, TMDBPoster.IMG_W_185, this);
+            mMovies.setAdapter(mMovieAdapter);
             mConnectionFailureMessage.setVisibility(View.GONE);
         }
     }
@@ -159,7 +174,34 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
 
     @Override
     public void onItemClick(MovieAdapter adapter, int position) {
-        MovieActivity.start(this, adapter.getItem(position));
+        Intent intent = MovieActivity.intent(this, adapter.getItem(position));
+        startActivityForResult(intent, REQUEST_MOVIE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_MOVIE
+                && resultCode == RESULT_OK) {
+            invalidate();
+        }
+    }
+
+    @Override
+    public void onFavoriteItemClick(MovieAdapter adapter, int position) {
+        Movie movie = adapter.getItem(position);
+        TMDBDatabase db = new TMDBDatabase(this);
+        db.favorite(movie, !movie.favorite());
+        invalidate();
+    }
+
+    private void invalidate() {
+        if (mCurrentLoaderId == R.string.favorites) {
+            request(mCurrentLoaderId);
+        } else {
+            TMDBDatabase db = new TMDBDatabase(this);
+            Movies movies = new TMDBApi.MoviesApi(mMovieAdapter.getMovies(), db.favoritesId());
+            mMovieAdapter.setMovies(movies);
+        }
     }
 
     private int getSpanCount() {
@@ -167,8 +209,8 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
         DisplayMetrics outMetrics = new DisplayMetrics();
         display.getMetrics(outMetrics);
 
-        float density  = getResources().getDisplayMetrics().density;
-        float dpWidth  = outMetrics.widthPixels / density;
+        float density = getResources().getDisplayMetrics().density;
+        float dpWidth = outMetrics.widthPixels / density;
         return Math.round(dpWidth/IMG_SIZE);
     }
 

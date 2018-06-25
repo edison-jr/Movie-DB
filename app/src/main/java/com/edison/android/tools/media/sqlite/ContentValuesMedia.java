@@ -4,17 +4,21 @@ package com.edison.android.tools.media.sqlite;
 import android.content.ContentValues;
 import android.support.annotation.NonNull;
 
-import com.edison.android.tools.media.MediaWriter;
+import com.edison.android.tools.media.Media;
 
 /**
  * Created by jeziel on 10/03/17.
  */
-public class ContentValuesMedia implements MediaWriter<ContentValues> {
+public class ContentValuesMedia implements Media<ContentValues> {
 
     private ContentValues mValues;
 
     public ContentValuesMedia(@NonNull ContentValues values) {
         this.mValues = values;
+    }
+
+    public ContentValuesMedia() {
+        this(new ContentValues());
     }
 
     @Override
@@ -43,7 +47,7 @@ public class ContentValuesMedia implements MediaWriter<ContentValues> {
     }
 
     @Override
-    public ContentValues media() {
+    public ContentValues data() {
         return mValues;
     }
 

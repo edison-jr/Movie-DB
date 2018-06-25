@@ -3,8 +3,8 @@ package com.edison.android.tools.media.json;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.edison.android.tools.media.Media;
 import com.edison.android.tools.media.MediaReader;
-import com.edison.android.tools.media.MediaWriter;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,7 +12,7 @@ import org.json.JSONObject;
 /**
  * Created by jeziel on 11/03/17.
  */
-public class JsonMedia implements MediaReader, MediaWriter<JSONObject> {
+public class JsonMedia implements MediaReader, Media<JSONObject> {
 
     private static final String TAG = JsonMedia.class.getSimpleName();
 
@@ -118,7 +118,7 @@ public class JsonMedia implements MediaReader, MediaWriter<JSONObject> {
     }
 
     @Override
-    public JSONObject media() {
+    public JSONObject data() {
         return mMedia;
     }
 }

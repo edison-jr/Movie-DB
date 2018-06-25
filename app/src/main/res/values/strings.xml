@@ -5,7 +5,13 @@
 
     <string name="popular">Mais popular</string>
     <string name="top_rated">Melhor avaliado</string>
+    <string name="favorites">Favoritos</string>
+    <string name="favorite">Favorito</string>
     <string name="detail">Detalhes</string>
     <string name="overview">Sinopse</string>
+    <string name="videos">Vídeos</string>
+    <string name="reviews">Opiniões</string>
     <string name="description_poster">Poster do filme</string>
+    <string name="read_more">Ler mais</string>
+    <string name="read_less">Ler menos</string>
 </resources>
