@@ -145,13 +145,17 @@ public class MovieActivity extends AppCompatActivity implements VideoAdapter.OnI
     @Override
     public void onItemClick(VideoAdapter adapter, int position, Video video) {
         Intent intent = new Intent(Intent.ACTION_VIEW, new YoutubeWatch().uri(video.key()));
-        startActivity(intent);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        }
     }
 
     @Override
     public void onItemClick(ReviewAdapter adapter, int position, Review review) {
         Intent intent = new Intent(Intent.ACTION_VIEW, review.url());
-        startActivity(intent);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        }
     }
 
     private class VideosLoader implements LoaderManager.LoaderCallbacks<Videos> {
@@ -164,7 +168,7 @@ public class MovieActivity extends AppCompatActivity implements VideoAdapter.OnI
 
         @Override
         public void onLoadFinished(@NonNull Loader<Videos> loader, Videos data) {
-            if (data.size() > 0) {
+            if (data != null && data.size() > 0) {
                 mTvVideos.setVisibility(View.VISIBLE);
                 VideoAdapter adapter = new VideoAdapter(data, YoutubeThumbnail.DEFAULT, MovieActivity.this);
                 mVideos.setAdapter(adapter);
@@ -189,7 +193,7 @@ public class MovieActivity extends AppCompatActivity implements VideoAdapter.OnI
 
         @Override
         public void onLoadFinished(@NonNull Loader<Reviews> loader, Reviews data) {
-            if (data.size() > 0) {
+            if (data != null && data.size() > 0) {
                 mTvReviews.setVisibility(View.VISIBLE);
                 ReviewAdapter adapter = new ReviewAdapter(data, MovieActivity.this);
                 mReviews.setAdapter(adapter);

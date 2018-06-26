@@ -25,6 +25,7 @@ import com.edison.android.apps.moviedb.tmdb.db.TMDBDatabase;
 import com.edison.android.apps.moviedb.tmdb.domain.movie.Movie;
 import com.edison.android.apps.moviedb.tmdb.domain.movie.Movies;
 import com.edison.android.tools.net.NetworkListener;
+import com.edison.android.tools.net.VerifyConnection;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -35,14 +36,13 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
     private static final int IMG_SIZE = 185;
 
     private static final String LOADER_ID = "loader_id";
-    private static final int REQUEST_MOVIE = 1;
 
     private final NetworkListener mNetworkListener = new NetworkListener() {
 
         @Override
         public void onConnected() {
             mConnectionFailureMessage.setVisibility(View.GONE);
-            request(R.string.popular);
+            request(mCurrentLoaderId);
         }
 
         @Override
@@ -79,8 +79,6 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
 
         if (extras != null) {
             request(extras.getInt(LOADER_ID, R.string.popular));
-        } else {
-            request(R.string.popular);
         }
     }
 
@@ -91,14 +89,17 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(mNetworkListener, filter);
 
-        if (mCurrentLoaderId == R.id.favorite) {
-            request(mCurrentLoaderId);
+        invalidate();
+
+        if (new VerifyConnection(this).connected()) {
+            mConnectionFailureMessage.setVisibility(View.GONE);
+        } else {
+            mConnectionFailureMessage.setVisibility(View.VISIBLE);
         }
     }
 
     @Override
     protected void onPause() {
-        mConnectionFailureMessage.setVisibility(View.GONE);
         unregisterReceiver(mNetworkListener);
         super.onPause();
     }
@@ -126,6 +127,9 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
     }
 
     private void request(@StringRes int id) {
+        if (id == 0) {
+            id = R.string.popular;
+        }
         getSupportLoaderManager().restartLoader(id, null, this);
     }
 
@@ -144,9 +148,9 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
     }
 
     @Override
-    public void onLoadFinished(Loader<Movies> loader, Movies data) {
+    public void onLoadFinished(@NonNull Loader<Movies> loader, Movies data) {
         mLoadingIndicator.setVisibility(View.GONE);
-        if (data == null) {
+        if (data == null || data.size() == 0) {
             mErrorMessage.setVisibility(View.VISIBLE);
             mMovies.setVisibility(View.INVISIBLE);
         } else {
@@ -155,12 +159,12 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
             mMovies.setVisibility(View.VISIBLE);
             mMovieAdapter = new MovieAdapter(data, TMDBPoster.IMG_W_185, this);
             mMovies.setAdapter(mMovieAdapter);
-            mConnectionFailureMessage.setVisibility(View.GONE);
+            mErrorMessage.setVisibility(View.GONE);
         }
     }
 
     @Override
-    public void onLoaderReset(Loader<Movies> loader) {
+    public void onLoaderReset(@NonNull Loader<Movies> loader) {
         mLoadingIndicator.setVisibility(View.VISIBLE);
     }
 
@@ -175,15 +179,7 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
     @Override
     public void onItemClick(MovieAdapter adapter, int position) {
         Intent intent = MovieActivity.intent(this, adapter.getItem(position));
-        startActivityForResult(intent, REQUEST_MOVIE);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_MOVIE
-                && resultCode == RESULT_OK) {
-            invalidate();
-        }
+        startActivity(intent);
     }
 
     @Override
@@ -197,7 +193,7 @@ public class MoviesActivity extends AppCompatActivity implements MovieAdapter.On
     private void invalidate() {
         if (mCurrentLoaderId == R.string.favorites) {
             request(mCurrentLoaderId);
-        } else {
+        } else if (mCurrentLoaderId > 0) {
             TMDBDatabase db = new TMDBDatabase(this);
             Movies movies = new TMDBApi.MoviesApi(mMovieAdapter.getMovies(), db.favoritesId());
             mMovieAdapter.setMovies(movies);
