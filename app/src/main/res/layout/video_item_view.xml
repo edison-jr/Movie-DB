@@ -24,7 +24,8 @@
                 android:layout_width="192dp"
                 android:layout_height="108dp"
                 android:scaleType="centerCrop"
-                android:background="@android:color/darker_gray" />
+                android:background="@android:color/darker_gray"
+                android:contentDescription="@string/videos" />
 
             <TextView
                 android:id="@+id/tv_nome"
